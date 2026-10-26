@@ -1,0 +1,6 @@
+{
+  "name": "JARVIS Hands-Free Android Assistant",
+  "description": "Privacy-first, hands-free Android voice assistant with local wake-word detection, floating holographic overlay orb, foreground microphone service, deterministic command router, and complete Kotlin implementation.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
