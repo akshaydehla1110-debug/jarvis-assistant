@@ -8,6 +8,9 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executors
 
 data class JarvisAiReply(
@@ -19,37 +22,44 @@ data class JarvisAiReply(
 )
 
 /**
- * Connects the Android Dynamic Island service to Gemini for:
- * - Universal Indian & Global Multilingual Voice Conversation (24 Indian languages)
- * - Gaming Intelligence (FPS, ping, tactical coaching)
- * - Editing Intelligence (Color grading LUTs, cuts, audio ducking)
- * - Creator Intelligence (YouTube CTR titles, Instagram Reels hooks & captions)
- * - World Knowledge & Private Device Orchestration
+ * Connects the Android Dynamic Island service to Gemini Omni Intelligence:
+ * 1. First uses direct Gemini API if BuildConfig.GEMINI_API_KEY is configured, OR
+ * 2. Connects directly to the live JARVIS Cloud Run proxy (/api/jarvis/intelligence) so the APK
+ *    works out-of-the-box without requiring manual GitHub Secrets setup!
+ * 3. Includes an offline multilingual conversational engine fallback when the phone has no internet.
  */
 class JarvisGeminiBrain {
 
     private val executor = Executors.newSingleThreadExecutor()
 
+    companion object {
+        private const val CLOUD_PROXY_ENDPOINT =
+            "https://ais-pre-hqb3a5dusfmnkreppjsu7c-7031346790.asia-southeast1.run.app/api/jarvis/intelligence"
+    }
+
     fun askJarvisAsync(
         utterance: String,
         preferredLanguageBcp47: String,
+        honorific: String = "Sir",
+        personaStyle: String = "deep_male",
         onResult: (JarvisAiReply) -> Unit
     ) {
         executor.execute {
             val apiKey = BuildConfig.GEMINI_API_KEY
+
+            // Path A: Try Cloud Run Proxy first when local BuildConfig key is not set
             if (apiKey.isBlank()) {
-                onResult(
-                    JarvisAiReply(
-                        spokenResponse = "Sir, I heard: $utterance. Configure GEMINI_API_KEY in GitHub Secrets or local gradle properties for cloud Omni intelligence.",
-                        detectedLanguage = preferredLanguageBcp47,
-                        newLanguageBcp47 = "",
-                        intelligenceDomain = "LOCAL_CORE",
-                        targetPackageHint = ""
-                    )
-                )
+                val proxyReply = callCloudRunProxy(utterance, preferredLanguageBcp47, honorific, personaStyle)
+                if (proxyReply != null) {
+                    onResult(proxyReply)
+                    return@execute
+                }
+                // Offline intelligent multilingual response
+                onResult(buildOfflineSmartResponse(utterance, preferredLanguageBcp47, honorific))
                 return@execute
             }
 
+            // Path B: Direct Gemini API call when BuildConfig.GEMINI_API_KEY is present
             try {
                 val endpoint =
                     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"
@@ -64,10 +74,10 @@ class JarvisGeminiBrain {
 
                 val systemPrompt = """
                     You are JARVIS, a Siri + Gemini style Liquid Glass Dynamic Island voice assistant on Android.
-                    Persona: Deep, clear, confident male voice with a refined Indian English accent or native fluency in all 24 Indian languages (Hindi, Hinglish, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Odia, Malayalam, Punjabi, Assamese, Maithili, Sanskrit, Konkani, Nepali, Sindhi, Dogri, Kashmiri, Manipuri, Santali, Bodo).
+                    Address the user respectfully as "$honorific".
+                    Voice Persona Style: $personaStyle.
                     Current language setting: $preferredLanguageBcp47.
-                    Include Gaming Intelligence, Editing Intelligence, Creator Intelligence, and World Intelligence.
-                    Reply in concise, natural spoken sentences (2-3 sentences max) in the same language the user spoke.
+                    Reply in concise, natural spoken sentences (2-3 sentences max) in the exact language the user spoke (Hindi, Hinglish, English, or any of the 24 Indian languages).
                 """.trimIndent()
 
                 val payload = JSONObject().apply {
@@ -110,24 +120,93 @@ class JarvisGeminiBrain {
 
                 onResult(
                     JarvisAiReply(
-                        spokenResponse = if (text.isNotBlank()) text else "Completed, Sir.",
+                        spokenResponse = if (text.isNotBlank()) text else "Completed, $honorific.",
                         detectedLanguage = preferredLanguageBcp47,
                         newLanguageBcp47 = "",
                         intelligenceDomain = "OMNI_INTELLIGENCE",
                         targetPackageHint = ""
                     )
                 )
-            } catch (e: Exception) {
-                onResult(
-                    JarvisAiReply(
-                        spokenResponse = "Sir, processed locally on Dynamic Island: $utterance",
-                        detectedLanguage = preferredLanguageBcp47,
-                        newLanguageBcp47 = "",
-                        intelligenceDomain = "LOCAL_FALLBACK",
-                        targetPackageHint = ""
-                    )
-                )
+            } catch (_: Exception) {
+                val proxyFallback = callCloudRunProxy(utterance, preferredLanguageBcp47, honorific, personaStyle)
+                onResult(proxyFallback ?: buildOfflineSmartResponse(utterance, preferredLanguageBcp47, honorific))
             }
         }
+    }
+
+    private fun callCloudRunProxy(
+        utterance: String,
+        preferredLanguageBcp47: String,
+        honorific: String,
+        personaStyle: String
+    ): JarvisAiReply? {
+        return try {
+            val url = URL(CLOUD_PROXY_ENDPOINT)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                connectTimeout = 9000
+                readTimeout = 14000
+                doOutput = true
+            }
+
+            val reqBody = JSONObject().apply {
+                put("utterance", utterance)
+                put("preferredLanguage", preferredLanguageBcp47)
+                put("userHonorific", honorific)
+                put("voicePersona", personaStyle)
+                put("intelligenceFocus", "OMNI")
+            }
+
+            OutputStreamWriter(conn.outputStream, Charsets.UTF_8).use { writer ->
+                writer.write(reqBody.toString())
+                writer.flush()
+            }
+
+            if (conn.responseCode !in 200..299) return null
+
+            val responseText = BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8)).use {
+                it.readText()
+            }
+            val json = JSONObject(responseText)
+            val spoken = json.optString("spokenResponse", "").trim()
+            if (spoken.isBlank()) return null
+
+            JarvisAiReply(
+                spokenResponse = spoken,
+                detectedLanguage = json.optString("detectedLanguage", preferredLanguageBcp47),
+                newLanguageBcp47 = json.optString("newLanguageBcp47", ""),
+                intelligenceDomain = json.optString("intelligenceDomain", "OMNI_CLOUD"),
+                targetPackageHint = json.optString("targetPackageHint", "")
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun buildOfflineSmartResponse(
+        utterance: String,
+        preferredLanguageBcp47: String,
+        honorific: String
+    ): JarvisAiReply {
+        val lower = utterance.lowercase(Locale.ROOT)
+        val timeNow = SimpleDateFormat("h:mm a", Locale.US).format(Date())
+        val reply = when {
+            lower.contains("kaise ho") || lower.contains("how are you") ->
+                "Hi $honorific, main bilkul taiyaar hoon! All Liquid Glass Dynamic Island systems are online. Bataiye main aapki kya madad karun?"
+            lower.contains("time") || lower.contains("samay") || lower.contains("baje") ->
+                "$honorific, abhi samay $timeNow ho raha hai."
+            lower.contains("who are you") || lower.contains("kaun ho") ->
+                "Hi $honorific, welcome to the JARVIS world! Main aapka 24/7 Liquid Glass Dynamic Island AI assistant hoon."
+            else ->
+                "$honorific, maine aapka command sun liya: \"$utterance\". Main aapke phone aur Dynamic Island par har kaam ke liye ready hoon."
+        }
+        return JarvisAiReply(
+            spokenResponse = reply,
+            detectedLanguage = preferredLanguageBcp47,
+            newLanguageBcp47 = "",
+            intelligenceDomain = "OFFLINE_NEURAL_CORE",
+            targetPackageHint = ""
+        )
     }
 }

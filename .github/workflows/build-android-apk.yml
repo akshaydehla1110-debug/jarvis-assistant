@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-apk:
-    name: Compile Android APK (Liquid Glass Dynamic Island)
+    name: Compile Android APK (JARVIS Liquid Glass Dynamic Island)
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +22,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -32,6 +31,7 @@ jobs:
         working-directory: ./android-jarvis
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          JARVIS_CLOUD_ENDPOINT: "https://ais-pre-hqb3a5dusfmnkreppjsu7c-7031346790.asia-southeast1.run.app/api/jarvis/intelligence"
         run: |
           gradle wrapper --gradle-version 8.7
           chmod +x ./gradlew

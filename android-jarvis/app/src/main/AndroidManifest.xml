@@ -2,23 +2,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network Permission for Gemini Omni Intelligence (Gaming, Editing, Creator, World) -->
+    <!-- Network Permission for Gemini Omni Intelligence -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Core Foreground Service & Always-On Voice Recognition Permissions (Android 14 / SDK 34) -->
+    <!-- Core Foreground Service & 24/7 Low-Power Voice Recognition Permissions (Android 11 to 14+ / SDK 34) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Liquid Glass Dynamic Island Overlay Permission -->
+    <!-- Battery Optimization Bypass to prevent Android Doze Mode from killing JARVIS -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Liquid Glass Dynamic Island Overlay Permission (WindowManager TYPE_APPLICATION_OVERLAY) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Permission-Gated Device, Contacts, Media & Installed Apps Orchestration -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -38,27 +47,38 @@
             <action android:name="android.intent.action.SENDTO" />
             <data android:scheme="smsto" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <application
         android:allowBackup="false"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.JarvisLiquidGlass">
 
-        <!-- Main Setup, Language Selection & App Permission Vault Activity -->
+        <!-- Main Liquid Glass Dynamic Island Command Center Activity -->
         <activity
             android:name=".ui.PermissionsAndSetupActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:showWhenLocked="false">
+            android:windowSoftInputMode="adjustResize"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
-        <!-- Always-Ready Voice Recognition & Liquid Glass Dynamic Island Service -->
+        <!-- Persistent 24/7 Wake-Word & Liquid Glass Dynamic Island Foreground Service -->
         <service
             android:name=".service.JarvisWakeWordService"
             android:enabled="true"
@@ -66,7 +86,7 @@
             android:foregroundServiceType="microphone"
             android:stopWithTask="false" />
 
-        <!-- Optional User-Enabled Accessibility Service for Cross-App Automation -->
+        <!-- Custom AccessibilityService for Cross-App Actions & Live Screen Line Navigation -->
         <service
             android:name=".service.JarvisDeviceAccessibilityService"
             android:exported="false"

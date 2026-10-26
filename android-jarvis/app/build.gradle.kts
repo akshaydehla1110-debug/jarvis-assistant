@@ -11,18 +11,24 @@ android {
         applicationId = "com.jarvis.assistant"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0.0-LiquidGlass"
+        versionCode = 3
+        versionName = "3.0.0-LiquidGlass-Ultra"
 
         // Reads GEMINI_API_KEY from environment or gradle properties during build
         val geminiKey = System.getenv("GEMINI_API_KEY")
             ?: (project.findProperty("GEMINI_API_KEY") as? String)
             ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+
+        // Cloud proxy endpoint so the APK works out-of-the-box without requiring manual key entry
+        val cloudEndpoint = System.getenv("JARVIS_CLOUD_ENDPOINT")
+            ?: "https://ais-pre-hqb3a5dusfmnkreppjsu7c-7031346790.asia-southeast1.run.app/api/jarvis/intelligence"
+        buildConfigField("String", "JARVIS_CLOUD_ENDPOINT", "\"$cloudEndpoint\"")
     }
 
     buildFeatures {
         buildConfig = true
+        viewBinding = true
     }
 
     buildTypes {
@@ -34,7 +40,6 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
             isDebuggable = true
         }
     }

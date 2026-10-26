@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/island_root_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="18dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="18dp"
+    android:paddingBottom="10dp"
+    android:gravity="center_vertical"
+    android:background="#EE050811">
+
+    <!-- Compact Top Pill Row (Always Visible in Default & Active States) -->
+    <LinearLayout
+        android:id="@+id/island_compact_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Glowing JARVIS Core Orb Indicator -->
+        <View
+            android:id="@+id/island_orb_dot"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="10dp"
+            android:background="#00F5D4" />
+
+        <!-- Primary Status / Wake Label -->
+        <TextView
+            android:id="@+id/island_compact_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="JARVIS · Hey Jarvis"
+            android:textColor="#F8FAFC"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+
+        <!-- Honorific & Pitch Badge -->
+        <TextView
+            android:id="@+id/island_honorific_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="SIR"
+            android:textColor="#00F5D4"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Expanded Active State Container (Revealed on "Hey JARVIS" or Tap) -->
+    <LinearLayout
+        android:id="@+id/island_expanded_container"
+        android:layout_width="310dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Animated Audio Waveform Bar Row -->
+        <LinearLayout
+            android:id="@+id/island_waveform_row"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Spoken Transcript / AI Response Display -->
+        <TextView
+            android:id="@+id/island_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hi Sir, welcome to the JARVIS world, how can I help you?"
+            android:textColor="#F1F5F9"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
+
+        <!-- Subtext / Task Progress / Intelligence Core -->
+        <TextView
+            android:id="@+id/island_sub_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="LISTENING · Speak in any language"
+            android:textColor="#38BDF8"
+            android:textSize="11sp" />
+
+        <!-- Confirmation Row (For Sensitive Calls / Messages) -->
+        <LinearLayout
+            android:id="@+id/island_confirmation_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_island_confirm"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:text="Confirm"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btn_island_cancel"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Cancel"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Quick Action Row inside Expanded Dynamic Island -->
+        <LinearLayout
+            android:id="@+id/island_quick_actions_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_island_speak_now"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="6dp"
+                android:text="🎙️ Speak"
+                android:textColor="#00F5D4"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_island_open_hud"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="6dp"
+                android:text="⚡ Open HUD"
+                android:textColor="#E2E8F0"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/btn_island_collapse"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="6dp"
+                android:text="▲ Minimize"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

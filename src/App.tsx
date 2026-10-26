@@ -636,7 +636,17 @@ export default function App() {
           'Say "JARVIS, guide me to change display settings" for Live Line Navigation',
         ],
       });
-      speakJarvisVoice(welcomeText);
+      const androidBridge = (window as unknown as {
+        AndroidJarvisBridge?: {
+          triggerHeyJarvis?: (h: string) => void;
+          executeCommand?: (c: string) => void;
+        };
+      }).AndroidJarvisBridge;
+      if (androidBridge?.triggerHeyJarvis) {
+        androidBridge.triggerHeyJarvis(honorific);
+      } else {
+        speakJarvisVoice(welcomeText);
+      }
     },
     [currentLanguageObj.name, detectedUserPitchHz, speakJarvisVoice]
   );
@@ -646,6 +656,15 @@ export default function App() {
     async (rawUtterance: string, overrideGrantedApps?: Record<string, boolean>) => {
       const cleaned = rawUtterance.trim();
       if (!cleaned) return;
+
+      const androidBridge = (window as unknown as {
+        AndroidJarvisBridge?: {
+          executeCommand?: (c: string) => void;
+        };
+      }).AndroidJarvisBridge;
+      if (androidBridge?.executeCommand) {
+        androidBridge.executeCommand(cleaned);
+      }
 
       setIsIslandExpanded(true);
       setUserTranscript(cleaned);
