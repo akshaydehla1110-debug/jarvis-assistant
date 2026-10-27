@@ -584,7 +584,7 @@ class PermissionsAndSetupActivity : AppCompatActivity() {
         } else {
             true
         }
-        val accessibilityEnabled = JarvisDeviceAccessibilityService.isServiceEnabled()
+        val accessibilityEnabled = JarvisDeviceAccessibilityService.isAccessibilityActive()
 
         permissionMatrixText.text = buildString {
             appendLine("• Microphone (24/7 Wake & Voice): ${if (micGranted) "✅ GRANTED" else "⚠️ REQUIRED (Tap #1)"}")

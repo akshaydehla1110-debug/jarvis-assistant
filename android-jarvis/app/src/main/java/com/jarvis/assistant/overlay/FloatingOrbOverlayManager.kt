@@ -19,7 +19,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.jarvis.assistant.R
@@ -329,40 +328,33 @@ class FloatingOrbOverlayManager(
         layoutParams = params
 
         val inflated = LayoutInflater.from(context).inflate(R.layout.overlay_dynamic_island, null)
-        rootContainer = inflated.findViewById(R.id.islandRootContainer)
-        orbCoreDot = inflated.findViewById(R.id.orbCoreDot)
-        badgeTitleView = inflated.findViewById(R.id.islandBadgeTitle)
-        stateTagView = inflated.findViewById(R.id.islandStateTag)
-        expandedSection = inflated.findViewById(R.id.expandedContentSection)
-        transcriptView = inflated.findViewById(R.id.islandMainTranscript)
-        subTextView = inflated.findViewById(R.id.islandSubText)
-        navRowView = inflated.findViewById(R.id.navigationControlsRow)
-        confirmRowView = inflated.findViewById(R.id.confirmationControlsRow)
+        rootContainer = inflated.findViewById(R.id.island_root_container)
+        orbCoreDot = inflated.findViewById(R.id.island_orb_dot)
+        badgeTitleView = inflated.findViewById(R.id.island_compact_title)
+        stateTagView = inflated.findViewById(R.id.island_honorific_badge)
+        expandedSection = inflated.findViewById(R.id.island_expanded_container)
+        transcriptView = inflated.findViewById(R.id.island_status_text)
+        subTextView = inflated.findViewById(R.id.island_sub_text)
+        navRowView = null
+        confirmRowView = inflated.findViewById(R.id.island_confirmation_row)
 
-        val waveHost = inflated.findViewById<FrameLayout>(R.id.waveformHostContainer)
+        val waveHost = inflated.findViewById<LinearLayout>(R.id.island_waveform_row)
         val wave = WaveformVisualizerView(context)
         waveHost.addView(
             wave,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
             )
         )
         waveformView = wave
 
-        inflated.findViewById<Button>(R.id.btnNavPrev).setOnClickListener { onNavPrev() }
-        btnNavPauseResume = inflated.findViewById<Button>(R.id.btnNavPauseResume).apply {
-            setOnClickListener { onNavPauseResume() }
-        }
-        inflated.findViewById<Button>(R.id.btnNavNext).setOnClickListener { onNavNext() }
-        inflated.findViewById<Button>(R.id.btnNavStop).setOnClickListener { onNavStop() }
+        inflated.findViewById<Button>(R.id.btn_island_confirm).setOnClickListener { onConfirmAction() }
+        inflated.findViewById<Button>(R.id.btn_island_cancel).setOnClickListener { onCancelAction() }
 
-        inflated.findViewById<Button>(R.id.btnConfirmYes).setOnClickListener { onConfirmAction() }
-        inflated.findViewById<Button>(R.id.btnConfirmCancel).setOnClickListener { onCancelAction() }
-
-        inflated.findViewById<Button>(R.id.btnQuickSpeak).setOnClickListener { onTapWakeTrigger() }
-        inflated.findViewById<Button>(R.id.btnQuickGuide).setOnClickListener { onStartQuickGuide() }
-        inflated.findViewById<Button>(R.id.btnQuickCollapse).setOnClickListener { collapseToCompactPill() }
+        inflated.findViewById<View>(R.id.btn_island_speak_now).setOnClickListener { onTapWakeTrigger() }
+        inflated.findViewById<View>(R.id.btn_island_open_hud).setOnClickListener { onStartQuickGuide() }
+        inflated.findViewById<View>(R.id.btn_island_collapse).setOnClickListener { collapseToCompactPill() }
 
         attachDragAndTapListener(inflated, params)
         windowManager.addView(inflated, params)

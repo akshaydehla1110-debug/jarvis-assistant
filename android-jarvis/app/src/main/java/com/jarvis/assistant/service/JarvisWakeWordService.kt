@@ -137,8 +137,14 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
 
         overlayManager = FloatingOrbOverlayManager(
             context = applicationContext,
-            onTapTriggerOrPause = { handleOrbTap() },
+            onTapWakeTrigger = { handleOrbTap() },
+            onTapPauseOrCancel = { handleOrbTap() },
             onOpenFullApp = { openSetupActivity() },
+            onStartQuickGuide = { taskGuidanceEngine.startTaskByVoiceQuery("display settings") },
+            onNavPrev = { taskGuidanceEngine.previousStep() },
+            onNavPauseResume = { taskGuidanceEngine.pauseGuidance() },
+            onNavNext = { taskGuidanceEngine.nextStep() },
+            onNavStop = { taskGuidanceEngine.stopGuidance() },
             onConfirmAction = { confirmPendingCommand() },
             onCancelAction = { cancelPendingCommand("Cancelled, $detectedHonorific.") }
         )
@@ -156,8 +162,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                 overlayManager.showOrUpdateOrb(
                     state = if (status == "NAVIGATING") OrbState.NAVIGATING else OrbState.COMPLETED,
                     transcript = taskTitle,
-                    subtext = sub,
-                    honorific = detectedHonorific
+                    subtext = sub
                 )
                 broadcastStateToUi(status, taskTitle, sub)
             }
@@ -350,8 +355,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
         overlayManager.showOrUpdateOrb(
             state = OrbState.SPEAKING,
             transcript = welcomeGreeting,
-            subtext = "Detected Voice: $honorific (${pitchHz}Hz)",
-            honorific = honorific
+            subtext = "Detected Voice: $honorific (${pitchHz}Hz)"
         )
         broadcastStateToUi("SPEAKING", welcomeGreeting, "Detected Voice: $honorific (${pitchHz}Hz)")
 
@@ -396,7 +400,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
         if (!SpeechRecognizer.isRecognitionAvailable(applicationContext)) {
             isCapturingCommand = false
             val msg = "Speech Recognition service is unavailable on this device, $detectedHonorific."
-            overlayManager.showOrUpdateOrb(OrbState.ERROR, msg, "Install Google Speech Services", detectedHonorific)
+            overlayManager.showOrUpdateOrb(OrbState.ERROR, msg, "Install Google Speech Services")
             broadcastStateToUi("ERROR", msg, "SpeechRecognizer unavailable")
             resumeStandbyIfAllowed()
             return
@@ -414,8 +418,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                     overlayManager.showOrUpdateOrb(
                         state = OrbState.LISTENING,
                         transcript = "Listening, $detectedHonorific... Speak any command",
-                        subtext = "All 24 Indian & Global Languages Active",
-                        honorific = detectedHonorific
+                        subtext = "All 24 Indian & Global Languages Active"
                     )
                     broadcastStateToUi("LISTENING", "Listening, $detectedHonorific...", "Speak in any language")
                 }
@@ -432,8 +435,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                     overlayManager.showOrUpdateOrb(
                         state = OrbState.THINKING,
                         transcript = "Processing your command, $detectedHonorific...",
-                        subtext = "Live Navigation · Cross-App · Omni AI",
-                        honorific = detectedHonorific
+                        subtext = "Live Navigation · Cross-App · Omni AI"
                     )
                     broadcastStateToUi("THINKING", "Processing your command, $detectedHonorific...", "Omni AI Brain")
                 }
@@ -466,8 +468,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                         overlayManager.showOrUpdateOrb(
                             state = OrbState.LISTENING,
                             transcript = partial,
-                            subtext = "Live Voice Stream",
-                            honorific = detectedHonorific
+                            subtext = "Live Voice Stream"
                         )
                         broadcastStateToUi("LISTENING", partial, "Live Voice Stream")
                     }
@@ -509,8 +510,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
             overlayManager.showOrUpdateOrb(
                 state = OrbState.SPEAKING,
                 transcript = welcomeMsg,
-                subtext = "Addressed as $detectedHonorific",
-                honorific = detectedHonorific
+                subtext = "Addressed as $detectedHonorific"
             )
             broadcastStateToUi("SPEAKING", welcomeMsg, "Addressed as $detectedHonorific")
             speakPromptThenListenForCommand(welcomeMsg)
@@ -547,13 +547,12 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
         }
 
         // 4. Deterministic Cross-App & Hardware Command Router
-        when (val decision = commandRouter.evaluate(utterance, detectedHonorific)) {
+        when (val decision = commandRouter.evaluate(utterance)) {
             is CommandDecision.Executed -> {
                 overlayManager.showOrUpdateOrb(
                     state = OrbState.SPEAKING,
                     transcript = decision.spokenResponse,
-                    subtext = decision.categoryLabel,
-                    honorific = detectedHonorific
+                    subtext = decision.categoryLabel
                 )
                 broadcastStateToUi("SPEAKING", decision.spokenResponse, decision.categoryLabel)
                 speakAndReturnToStandby(decision.spokenResponse)
@@ -563,8 +562,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                 pendingConfirmationCommand = decision
                 overlayManager.showConfirmationPrompt(
                     title = decision.actionSummary,
-                    previewDetails = decision.previewPayload,
-                    honorific = detectedHonorific
+                    previewDetails = decision.previewPayload
                 )
                 broadcastStateToUi("CONFIRMATION", decision.actionSummary, decision.previewPayload)
                 speakPromptThenListenForCommand(decision.confirmationPrompt)
@@ -574,8 +572,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                 overlayManager.showOrUpdateOrb(
                     state = OrbState.ERROR,
                     transcript = decision.reason,
-                    subtext = "Unlock device required",
-                    honorific = detectedHonorific
+                    subtext = "Unlock device required"
                 )
                 broadcastStateToUi("ERROR", decision.reason, "Unlock device required")
                 speakAndReturnToStandby(decision.reason)
@@ -585,8 +582,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                 overlayManager.showOrUpdateOrb(
                     state = OrbState.THINKING,
                     transcript = "Asking JARVIS Neural Core: \"$utterance\"",
-                    subtext = "Gemini Omni AI",
-                    honorific = detectedHonorific
+                    subtext = "Gemini Omni AI"
                 )
                 broadcastStateToUi("THINKING", utterance, "Gemini Omni AI")
 
@@ -600,8 +596,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                         overlayManager.showOrUpdateOrb(
                             state = OrbState.SPEAKING,
                             transcript = aiReply.spokenResponse,
-                            subtext = "${aiReply.intelligenceDomain} · ${aiReply.detectedLanguage}",
-                            honorific = detectedHonorific
+                            subtext = "${aiReply.intelligenceDomain} · ${aiReply.detectedLanguage}"
                         )
                         broadcastStateToUi(
                             "SPEAKING",
@@ -622,8 +617,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
         overlayManager.showOrUpdateOrb(
             state = OrbState.COMPLETED,
             transcript = outcome,
-            subtext = "Confirmed & Executed",
-            honorific = detectedHonorific
+            subtext = "Confirmed & Executed"
         )
         broadcastStateToUi("COMPLETED", outcome, "Confirmed & Executed")
         speakAndReturnToStandby(outcome)
@@ -634,8 +628,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
         overlayManager.showOrUpdateOrb(
             state = OrbState.COMPLETED,
             transcript = reason,
-            subtext = "Aborted safely",
-            honorific = detectedHonorific
+            subtext = "Aborted safely"
         )
         broadcastStateToUi("COMPLETED", reason, "Aborted safely")
         speakAndReturnToStandby(reason)
@@ -654,8 +647,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                     overlayManager.showOrUpdateOrb(
                         state = OrbState.SPEAKING,
                         transcript = text,
-                        subtext = "JARVIS Voice Output ($detectedHonorific)",
-                        honorific = detectedHonorific
+                        subtext = "JARVIS Voice Output ($detectedHonorific)"
                     )
                 }
             }
@@ -671,8 +663,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
                         overlayManager.showOrUpdateOrb(
                             state = OrbState.COMPLETED,
                             transcript = text,
-                            subtext = "Tap Dynamic Island or say \"Hey JARVIS\"",
-                            honorific = detectedHonorific
+                            subtext = "Tap Dynamic Island or say \"Hey JARVIS\""
                         )
                         overlayManager.scheduleAutoDismiss()
                         resumeStandbyIfAllowed()
@@ -703,7 +694,7 @@ class JarvisWakeWordService : Service(), TextToSpeech.OnInitListener {
             onWakeWordDetected(honorific = detectedHonorific, pitchHz = 124)
         } else {
             stopAllAudioCapture()
-            overlayManager.collapseToStandbyPill()
+            overlayManager.collapseToCompactPill()
             resumeStandbyIfAllowed()
         }
     }
